@@ -58,9 +58,8 @@ if [ "$OS" = "linux" ]; then
 
     sudo apt-get update -qq
 
-    # Install packages
+    # Install base packages
     sudo apt-get install -y \
-        vim \
         tmux \
         git \
         curl \
@@ -69,7 +68,17 @@ if [ "$OS" = "linux" ]; then
         zsh \
         fzf \
         ripgrep \
-        gh
+        gh \
+        software-properties-common
+
+    # Install vim from PPA (CoC requires Vim 9.0.0438+, Ubuntu's default is too old)
+    info "Installing vim 9+ from PPA..."
+    sudo add-apt-repository -y ppa:jonathonf/vim
+    sudo apt-get update -qq
+    sudo apt-get install -y vim
+
+    VIM_VERSION=$(vim --version | head -n1)
+    info "Installed: $VIM_VERSION"
 
     # Install Node.js via NodeSource
     if ! command -v node &> /dev/null; then
