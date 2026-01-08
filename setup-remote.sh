@@ -193,17 +193,17 @@ encoded=$(printf "%s" "$input" | base64 | tr -d '\n')
 # This works even through tmux/SSH by wrapping in DCS
 if [ -n "$TMUX" ]; then
     # Inside tmux, use DCS passthrough
-    printf "\ePtmux;\e\e]52;c;%s\a\e\\" "$encoded"
+    printf "\ePtmux;\e\e]52;c;%s\a\e\\" "$encoded" > /dev/tty
 else
     # Direct to terminal
-    printf "\e]52;c;%s\a" "$encoded"
+    printf "\e]52;c;%s\a" "$encoded" > /dev/tty
 fi
 
-# Also copy to local clipboard as fallback
-if command -v xclip &> /dev/null; then
-    printf "%s" "$input" | xclip -selection clipboard
-elif command -v pbcopy &> /dev/null; then
-    printf "%s" "$input" | pbcopy
+# Also try local clipboard as fallback (ignore errors from xclip in SSH)
+if command -v pbcopy &> /dev/null; then
+    printf "%s" "$input" | pbcopy 2>/dev/null || true
+elif command -v xclip &> /dev/null && [ -n "$DISPLAY" ]; then
+    printf "%s" "$input" | xclip -selection clipboard 2>/dev/null || true
 fi
 EOF
 
@@ -237,14 +237,47 @@ fi
 echo
 
 # ============================================================================
-# Optional: Configure Vim for OSC 52
+# Configure Vim for OSC 52
 # ============================================================================
-info "Vim clipboard support..."
-echo "To enable OSC 52 in vim, you can install a plugin like:"
-echo "  Plug 'ojroques/vim-oscyank'"
-echo
-echo "Then add to your .vimrc:"
-echo "  vnoremap <leader>y :OSCYank<CR>"
+info "Configuring vim for OSC 52..."
+
+VIMRC="$HOME/.vimrc"
+
+# Check if vim is configured for OSC 52
+if [ -f "$VIMRC" ] && ! grep -q "OSCYank" "$VIMRC" 2>/dev/null; then
+    info "Adding OSC 52 plugin to vim..."
+
+    # Add plugin to vim-plug section
+    # Find the line with "call plug#begin" and add after it
+    if grep -q "call plug#begin" "$VIMRC"; then
+        # Create a backup
+        cp "$VIMRC" "$VIMRC.backup-osc52"
+
+        # Add the plugin after plug#begin
+        sed -i "/call plug#begin/a\\
+\\
+\" OSC 52 clipboard support for remote workspaces\\
+Plug 'ojroques/vim-oscyank'" "$VIMRC"
+
+        # Add the keybinding at the end of the file
+        cat >> "$VIMRC" << 'EOF'
+
+" ============================================================================
+" OSC 52 Clipboard (Remote Workspaces)
+" ============================================================================
+" Yank to system clipboard with <leader>y in visual mode
+autocmd TextYankPost * if v:event.operator is 'y' && v:event.regname is '' | execute 'OSCYankRegister "' | endif
+EOF
+
+        success "Vim configured for OSC 52"
+        info "Run :PlugInstall in vim to install the plugin"
+    else
+        warn "Could not find plug#begin in .vimrc. Add manually: Plug 'ojroques/vim-oscyank'"
+    fi
+else
+    info "Vim already configured for OSC 52 or .vimrc not found"
+fi
+
 echo
 
 # ============================================================================

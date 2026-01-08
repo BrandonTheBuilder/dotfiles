@@ -22,6 +22,9 @@ Plug 'mhinz/vim-signify'
 " GitHub PR review
 Plug 'ashot/vim-pr-comments'
 
+" OSC 52 clipboard support (works over SSH)
+Plug 'ojroques/vim-oscyank'
+
 " Status line
 Plug 'itchyny/lightline.vim'
 
@@ -275,3 +278,6 @@ nmap <leader>cf  <Plug>(coc-format-selected)
 
 " Show diagnostic error messages
 nnoremap <silent> <leader>d :CocDiagnostics<CR>
+
+" In visual mode, y yanks to system clipboard via OSC 52
+vnoremap y y:OSCYankRegister "<CR>
