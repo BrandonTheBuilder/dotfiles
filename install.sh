@@ -1,0 +1,200 @@
+#!/usr/bin/env bash
+# Dotfiles installation script
+# Run this script to install all dependencies for vim, zsh, and tmux configs
+
+set -e  # Exit on error
+
+echo "=================================="
+echo "Dotfiles Installation Script"
+echo "=================================="
+echo
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Get the directory where this script lives (the dotfiles directory)
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+info "Using dotfiles directory: $DOTFILES_DIR"
+echo
+
+# Check if Homebrew is installed
+if ! command -v brew &> /dev/null; then
+    warn "Homebrew not found. Attempting to install..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    # Add Homebrew to PATH for this session
+    if [ -f "/opt/homebrew/bin/brew" ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [ -f "/usr/local/bin/brew" ]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+fi
+
+info "Homebrew found: $(brew --version | head -n1)"
+echo
+
+# Update Homebrew
+info "Updating Homebrew..."
+brew update
+
+# Install core dependencies
+info "Installing core dependencies via Homebrew..."
+brew install vim tmux node fzf ripgrep gh uv
+
+# Install Oh-My-Zsh if not already installed
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    info "Installing Oh-My-Zsh..."
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+else
+    info "Oh-My-Zsh already installed, skipping..."
+fi
+
+# Install Powerlevel10k theme
+if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ]; then
+    info "Installing Powerlevel10k theme..."
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
+        ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+else
+    info "Powerlevel10k already installed, skipping..."
+fi
+
+# Install zsh plugins
+if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
+    info "Installing zsh-autosuggestions..."
+    git clone https://github.com/zsh-users/zsh-autosuggestions \
+        ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+else
+    info "zsh-autosuggestions already installed, skipping..."
+fi
+
+if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ]; then
+    info "Installing zsh-syntax-highlighting..."
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git \
+        ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+else
+    info "zsh-syntax-highlighting already installed, skipping..."
+fi
+
+# Install vim-plug
+if [ ! -f "$HOME/.vim/autoload/plug.vim" ]; then
+    info "Installing vim-plug..."
+    curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+        https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+else
+    info "vim-plug already installed, skipping..."
+fi
+
+# Create vim directories
+info "Creating vim directories..."
+mkdir -p ~/.vim/undo
+
+# Symlink dotfiles to $HOME (except .zshrc which needs special handling)
+info "Symlinking dotfiles to home directory..."
+DOTFILES=(
+    .vimrc
+    .tmux.conf
+    .p10k.zsh
+)
+
+for dotfile in "${DOTFILES[@]}"; do
+    if [ -f "$DOTFILES_DIR/$dotfile" ]; then
+        # Backup existing file if it exists and is not a symlink
+        if [ -f "$HOME/$dotfile" ] && [ ! -L "$HOME/$dotfile" ]; then
+            warn "Backing up existing $dotfile to ${dotfile}.backup"
+            mv "$HOME/$dotfile" "$HOME/${dotfile}.backup"
+        fi
+
+        info "Symlinking $dotfile"
+        ln -sf "$DOTFILES_DIR/$dotfile" "$HOME/$dotfile"
+    else
+        warn "Skipping $dotfile (not found in dotfiles directory)"
+    fi
+done
+
+# Special handling for .zshrc: create a real file that sources the repo version
+# This allows workspace setup scripts to append to ~/.zshrc without affecting the repo
+info "Setting up .zshrc..."
+if [ ! -f "$HOME/.zshrc" ]; then
+    # Create new .zshrc that sources the repo version
+    cat > "$HOME/.zshrc" << EOF
+# Source base zsh configuration from dotfiles
+if [ -f "$DOTFILES_DIR/.zshrc" ]; then
+    source "$DOTFILES_DIR/.zshrc"
+fi
+EOF
+    info "Created ~/.zshrc that sources dotfiles version"
+else
+    # Check if it already sources the dotfiles version
+    if ! grep -q "source.*$DOTFILES_DIR/.zshrc" "$HOME/.zshrc" 2>/dev/null; then
+        warn "Existing ~/.zshrc found. Prepending dotfiles source line..."
+        # Backup existing
+        cp "$HOME/.zshrc" "$HOME/.zshrc.backup"
+        # Prepend the source line
+        cat > "$HOME/.zshrc.tmp" << EOF
+# Source base zsh configuration from dotfiles
+if [ -f "$DOTFILES_DIR/.zshrc" ]; then
+    source "$DOTFILES_DIR/.zshrc"
+fi
+
+EOF
+        cat "$HOME/.zshrc.backup" >> "$HOME/.zshrc.tmp"
+        mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
+        info "Updated ~/.zshrc to source dotfiles version (backup saved as ~/.zshrc.backup)"
+    else
+        info "~/.zshrc already sources dotfiles version, skipping"
+    fi
+fi
+
+# Symlink CoC settings to vim directory
+info "Symlinking CoC settings..."
+mkdir -p ~/.vim
+ln -sf "$DOTFILES_DIR/coc-settings.json" ~/.vim/coc-settings.json
+
+# Install Python tools via uv
+info "Installing Python tools (ty, ruff) via uv..."
+uv tool install ty@latest
+uv tool install ruff
+
+# Install vim plugins
+info "Installing vim plugins..."
+vim +PlugInstall +qall
+
+echo
+info "=================================="
+info "Installation complete!"
+info "=================================="
+echo
+info "Dotfiles symlinked from: $DOTFILES_DIR"
+echo
+info "Next steps:"
+echo "  1. Restart your terminal or run: source ~/.zshrc"
+echo "  2. Authenticate with GitHub CLI: gh auth login"
+echo "  3. Run Powerlevel10k configuration wizard: p10k configure"
+echo "  4. Open vim to verify plugins are working"
+echo "  5. For Python projects, ensure ty is in your PATH: export PATH=\"\$HOME/.local/bin:\$PATH\""
+echo
+info "Installed tools:"
+echo "  - vim: $(vim --version | head -n1)"
+echo "  - tmux: $(tmux -V)"
+echo "  - Node.js: $(node --version)"
+echo "  - fzf: $(fzf --version)"
+echo "  - ripgrep: $(rg --version | head -n1)"
+echo "  - gh: $(gh --version | head -n1)"
+echo "  - uv: $(uv --version)"
+echo "  - ty: $(uv tool run ty --version 2>/dev/null || echo 'Check installation')"
+echo "  - ruff: $(uv tool run ruff --version 2>/dev/null || echo 'Check installation')"

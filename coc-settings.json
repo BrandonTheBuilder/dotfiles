@@ -1,0 +1,40 @@
+{
+  "coc.preferences.semanticTokensHighlights": false,
+  "languageserver": {
+    "bash": {
+      "command": "bash-language-server",
+      "args": ["start"],
+      "filetypes": ["sh", "bash"],
+      "ignoredRootPaths": ["~"]
+    },
+    "golang": {
+      "command": "gopls",
+      "rootPatterns": ["go.mod", ".git/"],
+      "filetypes": ["go"],
+      "initializationOptions": {
+        "usePlaceholders": true
+      }
+    },
+    "ty": {
+      "command": "ty",
+      "args": ["server"],
+      "filetypes": ["python"],
+      "rootPatterns": [
+        "pyproject.toml",
+        "setup.py",
+        "setup.cfg",
+        "requirements.txt",
+        "Pipfile",
+        ".git"
+      ],
+      "settings": {
+        "ty": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "python.formatting.provider": "none",
+  "python.linting.enabled": false,
+  "diagnostic.displayByAle": false
+}
