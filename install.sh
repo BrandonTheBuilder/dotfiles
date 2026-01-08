@@ -250,8 +250,12 @@ uv tool install ty@latest
 uv tool install ruff
 
 # Install vim plugins
-info "Installing vim plugins..."
-vim +PlugInstall +qall
+info "Installing vim plugins (this may take a minute)..."
+# Use --not-a-term to avoid terminal warnings, --sync to wait for completion
+vim --not-a-term -c "PlugInstall --sync" -c "qa" 2>&1 || true
+
+success "Vim plugins installed"
+info "Note: CoC.nvim may take a moment to initialize on first vim startup"
 
 echo
 info "=================================="
