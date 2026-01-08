@@ -89,7 +89,7 @@ if command -v apt-get &> /dev/null; then
 
     success "xclip and mosh installed"
 
-    # Add locale settings to .zshrc if not already present
+    # Add locale settings and prompt config to .zshrc if not already present
     if [ -f "$HOME/.zshrc" ]; then
         if ! grep -q "export LANG=en_US.UTF-8" "$HOME/.zshrc" 2>/dev/null; then
             info "Adding locale settings to ~/.zshrc"
@@ -100,6 +100,20 @@ export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 EOF
             success "Locale settings added to ~/.zshrc"
+        fi
+
+        # Add hostname to prompt for remote workspaces
+        if ! grep -q "POWERLEVEL9K_CONTEXT_" "$HOME/.zshrc" 2>/dev/null; then
+            info "Configuring prompt to show hostname..."
+            cat >> "$HOME/.zshrc" << 'EOF'
+
+# Show hostname in prompt for remote workspaces
+POWERLEVEL9K_CONTEXT_TEMPLATE="%n@$(hostname)"
+POWERLEVEL9K_CONTEXT_DEFAULT_FOREGROUND='yellow'
+# Always show context in remote workspaces
+typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,SUDO}_{CONTENT,VISUAL_IDENTIFIER}_EXPANSION=
+EOF
+            success "Prompt configured to show hostname"
         fi
     fi
 
