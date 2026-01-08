@@ -81,20 +81,19 @@ if [ "$OS" = "linux" ]; then
     info "Installed: $VIM_VERSION"
 
     # Install Node.js via NodeSource (includes npm)
-    if ! command -v node &> /dev/null; then
+    if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
         info "Installing Node.js and npm..."
         curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
         sudo apt-get install -y nodejs
     fi
 
-    # Verify npm is available
-    if ! command -v npm &> /dev/null; then
-        error "npm not found after Node.js installation. This should not happen."
-        warn "Skipping language server installation. Install manually with: sudo npm install -g bash-language-server"
-    else
-        # Install language servers for CoC.nvim
+    # Install language servers for CoC.nvim
+    if command -v npm &> /dev/null; then
         info "Installing language servers..."
         sudo npm install -g bash-language-server
+    else
+        error "npm not found after Node.js installation. This should not happen."
+        warn "Skipping language server installation. Install manually with: sudo npm install -g bash-language-server"
     fi
 
     # Install gopls for Go support
