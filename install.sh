@@ -27,34 +27,96 @@ error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+success() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
 # Get the directory where this script lives (the dotfiles directory)
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 info "Using dotfiles directory: $DOTFILES_DIR"
 echo
 
-# Check if Homebrew is installed
-if ! command -v brew &> /dev/null; then
-    warn "Homebrew not found. Attempting to install..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-    # Add Homebrew to PATH for this session
-    if [ -f "/opt/homebrew/bin/brew" ]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-    elif [ -f "/usr/local/bin/brew" ]; then
-        eval "$(/usr/local/bin/brew shellenv)"
-    fi
+# Detect operating system
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    OS="linux"
+    info "Detected: Linux"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="macos"
+    info "Detected: macOS"
+else
+    OS="unknown"
+    warn "Unknown OS: $OSTYPE"
 fi
-
-info "Homebrew found: $(brew --version | head -n1)"
 echo
 
-# Update Homebrew
-info "Updating Homebrew..."
-brew update
+# ============================================================================
+# Install Package Manager and Core Dependencies
+# ============================================================================
+if [ "$OS" = "linux" ]; then
+    # Linux (Ubuntu/Debian) - use apt
+    info "Installing core dependencies via apt..."
 
-# Install core dependencies
-info "Installing core dependencies via Homebrew..."
-brew install vim tmux node fzf ripgrep gh uv
+    sudo apt-get update -qq
+
+    # Install packages
+    sudo apt-get install -y \
+        vim \
+        tmux \
+        git \
+        curl \
+        wget \
+        build-essential \
+        zsh \
+        fzf \
+        ripgrep \
+        gh
+
+    # Install Node.js via NodeSource
+    if ! command -v node &> /dev/null; then
+        info "Installing Node.js..."
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+    fi
+
+    # Install uv via pip
+    if ! command -v uv &> /dev/null; then
+        info "Installing uv..."
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
+
+    success "Dependencies installed via apt"
+
+elif [ "$OS" = "macos" ]; then
+    # macOS - use Homebrew
+    if ! command -v brew &> /dev/null; then
+        warn "Homebrew not found. Attempting to install..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+        # Add Homebrew to PATH for this session
+        if [ -f "/opt/homebrew/bin/brew" ]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        elif [ -f "/usr/local/bin/brew" ]; then
+            eval "$(/usr/local/bin/brew shellenv)"
+        fi
+    fi
+
+    info "Homebrew found: $(brew --version | head -n1)"
+
+    # Update Homebrew
+    info "Updating Homebrew..."
+    brew update
+
+    # Install core dependencies
+    info "Installing core dependencies via Homebrew..."
+    brew install vim tmux node fzf ripgrep gh uv
+
+    success "Dependencies installed via Homebrew"
+else
+    error "Unsupported operating system. Please install dependencies manually."
+    exit 1
+fi
+
+echo
 
 # Install Oh-My-Zsh if not already installed
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
