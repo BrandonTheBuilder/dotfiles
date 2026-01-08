@@ -80,11 +80,29 @@ if [ "$OS" = "linux" ]; then
     VIM_VERSION=$(vim --version | head -n1)
     info "Installed: $VIM_VERSION"
 
-    # Install Node.js via NodeSource
+    # Install Node.js via NodeSource (includes npm)
     if ! command -v node &> /dev/null; then
-        info "Installing Node.js..."
+        info "Installing Node.js and npm..."
         curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
         sudo apt-get install -y nodejs
+    fi
+
+    # Verify npm is available
+    if ! command -v npm &> /dev/null; then
+        error "npm not found after Node.js installation. This should not happen."
+        warn "Skipping language server installation. Install manually with: sudo npm install -g bash-language-server"
+    else
+        # Install language servers for CoC.nvim
+        info "Installing language servers..."
+        sudo npm install -g bash-language-server
+    fi
+
+    # Install gopls for Go support
+    if ! command -v gopls &> /dev/null; then
+        info "Installing gopls (Go language server)..."
+        go install golang.org/x/tools/gopls@latest 2>/dev/null || {
+            warn "Could not install gopls (requires Go). Install manually if needed: go install golang.org/x/tools/gopls@latest"
+        }
     fi
 
     # Install uv via installer
@@ -120,6 +138,18 @@ elif [ "$OS" = "macos" ]; then
     # Install core dependencies
     info "Installing core dependencies via Homebrew..."
     brew install vim tmux node fzf ripgrep gh uv
+
+    # Install language servers for CoC.nvim
+    info "Installing language servers..."
+    npm install -g bash-language-server
+
+    # Install gopls for Go support
+    if ! command -v gopls &> /dev/null; then
+        info "Installing gopls (Go language server)..."
+        go install golang.org/x/tools/gopls@latest 2>/dev/null || {
+            warn "Could not install gopls (requires Go). Install manually if needed: go install golang.org/x/tools/gopls@latest"
+        }
+    fi
 
     success "Dependencies installed via Homebrew"
 else
@@ -263,13 +293,9 @@ info "Installing Python tools (ty, ruff) via uv..."
 uv tool install ty@latest
 uv tool install ruff
 
-# Install vim plugins
-info "Installing vim plugins (this may take a minute)..."
-# Use --not-a-term to avoid terminal warnings, --sync to wait for completion
-vim --not-a-term -c "PlugInstall --sync" -c "qa" 2>&1 || true
-
-success "Vim plugins installed"
-info "Note: CoC.nvim may take a moment to initialize on first vim startup"
+# Vim plugins will auto-install on first launch
+info "Vim plugins will auto-install when you first open vim"
+info "Note: CoC.nvim will take ~30 seconds to build on first vim startup"
 
 echo
 

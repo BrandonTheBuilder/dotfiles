@@ -42,6 +42,11 @@ Plug 'sheerun/vim-polyglot'
 
 call plug#end()
 
+" Auto-install plugins on first launch
+if empty(glob('~/.vim/plugged'))
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
 " ============================================================================
 " Display Settings
 " ============================================================================
