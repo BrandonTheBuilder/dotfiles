@@ -118,6 +118,15 @@ fi
 
 echo
 
+# ============================================================================
+# Temporarily disable git URL rewrites for installation
+# ============================================================================
+# Some environments (like Datadog workspaces) rewrite HTTPS to SSH URLs
+# This causes issues when SSH keys aren't set up
+info "Configuring git to use HTTPS..."
+SAVED_GIT_URL=$(git config --global --get url."git@github.com:".insteadOf 2>/dev/null || echo "")
+git config --global --unset-all url."git@github.com:".insteadOf 2>/dev/null || true
+
 # Install Oh-My-Zsh if not already installed
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     info "Installing Oh-My-Zsh..."
@@ -150,6 +159,14 @@ if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ]
         ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 else
     info "zsh-syntax-highlighting already installed, skipping..."
+fi
+
+# ============================================================================
+# Restore git URL rewrites if they existed
+# ============================================================================
+if [ -n "$SAVED_GIT_URL" ]; then
+    info "Restoring git URL configuration..."
+    git config --global url."git@github.com:".insteadOf "$SAVED_GIT_URL"
 fi
 
 # Install vim-plug
