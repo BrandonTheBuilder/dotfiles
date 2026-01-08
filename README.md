@@ -61,6 +61,20 @@ The install script will:
 3. Run Powerlevel10k configuration: `p10k configure`
 4. Open vim to verify plugins are working
 
+### Remote Clipboard Setup (Optional)
+
+For remote workspaces, set up OSC 52 to copy from the workspace to your local machine's clipboard:
+
+```bash
+./setup-remote-clipboard.sh
+```
+
+This enables:
+- Copy in tmux → paste on your local Mac (works through SSH)
+- Mosh installation for better remote connections
+- xclip for local workspace clipboard
+- UTF-8 locale configuration
+
 ## Workspace Usage
 
 This repository is designed to work with remote workspace tools that support the `--dotfiles` flag:
@@ -78,14 +92,15 @@ The workspace will automatically:
 
 ```
 .
-├── .vimrc                        # Vim configuration
-├── .tmux.conf                    # Tmux configuration
-├── .zshrc                        # Zsh configuration (sourced by system .zshrc)
-├── .p10k.zsh                     # Powerlevel10k theme configuration
-├── coc-settings.json             # CoC.nvim language server settings
-├── install.sh                    # Automated installation script
-├── vim-shortcuts-cheatsheet.md   # Quick reference for vim keybindings
-└── README.md                     # This file
+├── .vimrc                          # Vim configuration
+├── .tmux.conf                      # Tmux configuration
+├── .zshrc                          # Zsh configuration (sourced by system .zshrc)
+├── .p10k.zsh                       # Powerlevel10k theme configuration
+├── coc-settings.json               # CoC.nvim language server settings
+├── install.sh                      # Automated installation script
+├── setup-remote-clipboard.sh       # Optional: OSC 52 and mosh setup for remote workspaces
+├── vim-shortcuts-cheatsheet.md     # Quick reference for vim keybindings
+└── README.md                       # This file
 ```
 
 ## Key Bindings
