@@ -70,11 +70,12 @@ For remote workspaces, run the setup script to configure remote development tool
 ```
 
 This enables:
-- **OSC 52:** Copy in tmux → paste on your local Mac (works through SSH)
-- **Mosh:** Better remote connections with auto-reconnect and local echo
-- **xclip:** Local workspace clipboard support
-- **UTF-8 locales:** Proper character encoding for mosh
-- **Interactive mosh start:** Optional prompt to start mosh server
+- **OSC 52:** Copy in tmux/vim → paste on your local Mac (works through SSH)
+- **UTF-8 locales:** Proper character encoding
+- **Hostname in prompt:** Shows which remote machine you're on
+- **Mosh (optional):** Better network handling, but doesn't support OSC 52 clipboard
+
+**Note:** Mosh doesn't support OSC 52 clipboard. Use SSH + tmux for clipboard support with session persistence.
 
 ## Workspace Usage
 

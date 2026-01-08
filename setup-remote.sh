@@ -75,37 +75,38 @@ fi
 echo
 
 # ============================================================================
-# Install xclip and mosh (for remote sessions)
+# Configure UTF-8 Locale
 # ============================================================================
-info "Installing xclip and mosh for remote workspace..."
-
 if command -v apt-get &> /dev/null; then
+    info "Configuring UTF-8 locale..."
     sudo apt-get update -qq
-    sudo apt-get install -y xclip mosh locales
+    sudo apt-get install -y locales
 
-    # Configure locale for mosh
     sudo locale-gen en_US.UTF-8
     sudo update-locale LANG=en_US.UTF-8
 
-    success "xclip and mosh installed"
-
-    # Add locale settings and prompt config to .zshrc if not already present
+    # Add locale settings to .zshrc if not already present
     if [ -f "$HOME/.zshrc" ]; then
         if ! grep -q "export LANG=en_US.UTF-8" "$HOME/.zshrc" 2>/dev/null; then
             info "Adding locale settings to ~/.zshrc"
             cat >> "$HOME/.zshrc" << 'EOF'
 
-# Locale settings for mosh
+# Locale settings
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 EOF
             success "Locale settings added to ~/.zshrc"
         fi
+    fi
 
-        # Add hostname to prompt for remote workspaces
-        if ! grep -q "POWERLEVEL9K_CONTEXT_" "$HOME/.zshrc" 2>/dev/null; then
-            info "Configuring prompt to show hostname..."
-            cat >> "$HOME/.zshrc" << 'EOF'
+    success "UTF-8 locale configured"
+fi
+
+# Add hostname to prompt for remote workspaces
+if [ -f "$HOME/.zshrc" ]; then
+    if ! grep -q "POWERLEVEL9K_CONTEXT_" "$HOME/.zshrc" 2>/dev/null; then
+        info "Configuring prompt to show hostname..."
+        cat >> "$HOME/.zshrc" << 'EOF'
 
 # Show hostname in prompt for remote workspaces
 POWERLEVEL9K_CONTEXT_TEMPLATE="%n@$(hostname)"
@@ -113,26 +114,45 @@ POWERLEVEL9K_CONTEXT_DEFAULT_FOREGROUND='yellow'
 # Always show context in remote workspaces
 typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,SUDO}_{CONTENT,VISUAL_IDENTIFIER}_EXPANSION=
 EOF
-            success "Prompt configured to show hostname"
-        fi
+        success "Prompt configured to show hostname"
     fi
+fi
 
-    info "To connect with mosh from your local machine:"
-    echo "  mosh user@host -- tmux new -A -s main"
-    echo
-    info "Mosh uses UDP ports 60000-61000 by default"
+echo
 
-elif command -v brew &> /dev/null; then
-    # macOS
-    info "On macOS, using pbcopy instead of xclip"
+# ============================================================================
+# Optional: Install mosh
+# ============================================================================
+info "Mosh provides better remote connections but doesn't support OSC 52 clipboard."
+info "SSH + tmux is recommended for clipboard support."
+echo
+read -p "Install mosh? (y/n): " -n 1 -r
+echo
 
-    if ! command -v mosh &> /dev/null; then
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if command -v apt-get &> /dev/null; then
         info "Installing mosh..."
-        brew install mosh
+        sudo apt-get install -y mosh
         success "mosh installed"
+
+        info "To connect with mosh from your local machine:"
+        echo "  mosh user@host -- tmux new -A -s main"
+        echo
+        info "Mosh uses UDP ports 60000-61000 by default"
+
+    elif command -v brew &> /dev/null; then
+        if ! command -v mosh &> /dev/null; then
+            info "Installing mosh..."
+            brew install mosh
+            success "mosh installed"
+        else
+            info "mosh already installed"
+        fi
+    else
+        warn "No package manager found, cannot install mosh"
     fi
 else
-    warn "No package manager found, skipping installation"
+    info "Skipped mosh installation. Use SSH for remote connections."
 fi
 
 echo
@@ -288,18 +308,21 @@ success "=========================================="
 success "Remote Workspace Setup Complete!"
 success "=========================================="
 echo
-info "How to use remote clipboard:"
-echo "  1. In tmux copy mode: press 'y' to yank"
-echo "  2. Text is copied to your LOCAL machine's clipboard via OSC 52"
-echo "  3. Paste on your Mac with Cmd+V"
+info "Connecting to remote workspace (recommended):"
+echo "  ssh user@host"
+echo "  tmux new -A -s main"
 echo
-info "Testing:"
-echo "  1. Open tmux: tmux"
-echo "  2. Enter copy mode: Ctrl-g ["
-echo "  3. Select text with 'v' and 'y' to yank"
-echo "  4. Exit tmux and paste on your local machine"
+info "How to use remote clipboard (OSC 52 via SSH):"
+echo "  • Tmux: Press Ctrl-g [ for copy mode, select with 'v', yank with 'y'"
+echo "  • Vim: Enter visual mode (v/V/Ctrl-v), select text, press 'y'"
+echo "  • Text is copied to your LOCAL clipboard"
+echo "  • Paste on your Mac with Cmd+V"
 echo
-info "Note: Restart tmux for changes to take effect:"
+info "Session persistence:"
+echo "  • Tmux sessions survive SSH disconnects"
+echo "  • If disconnected, SSH back in and run: tmux attach"
+echo
+info "Note: Restart tmux for OSC 52 changes to take effect:"
 echo "  tmux kill-server && tmux"
 echo
 
