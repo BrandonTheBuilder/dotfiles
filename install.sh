@@ -90,10 +90,10 @@ if [ "$OS" = "linux" ]; then
     # Install language servers for CoC.nvim
     if command -v npm &> /dev/null; then
         info "Installing language servers..."
-        sudo npm install -g bash-language-server
+        npm install -g bash-language-server
     else
         error "npm not found after Node.js installation. This should not happen."
-        warn "Skipping language server installation. Install manually with: sudo npm install -g bash-language-server"
+        warn "Skipping language server installation. Install manually with: npm install -g bash-language-server"
     fi
 
     # Install gopls for Go support
