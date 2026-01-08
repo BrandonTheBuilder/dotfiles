@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Remote Clipboard Setup Script
-# Configures OSC 52 for copying from remote workspace to local machine clipboard
+# Remote Workspace Setup Script
+# Configures OSC 52, mosh, and other tools for remote development
 
 set -e
 
 echo "=========================================="
-echo "Remote Clipboard Setup (OSC 52)"
+echo "Remote Workspace Setup"
 echo "=========================================="
 echo
 
@@ -241,10 +241,10 @@ echo
 # ============================================================================
 echo
 success "=========================================="
-success "Remote Clipboard Setup Complete!"
+success "Remote Workspace Setup Complete!"
 success "=========================================="
 echo
-info "How to use:"
+info "How to use remote clipboard:"
 echo "  1. In tmux copy mode: press 'y' to yank"
 echo "  2. Text is copied to your LOCAL machine's clipboard via OSC 52"
 echo "  3. Paste on your Mac with Cmd+V"
@@ -257,4 +257,31 @@ echo "  4. Exit tmux and paste on your local machine"
 echo
 info "Note: Restart tmux for changes to take effect:"
 echo "  tmux kill-server && tmux"
+echo
+
+# ============================================================================
+# Optional: Start Mosh Server
+# ============================================================================
+if command -v mosh-server &> /dev/null; then
+    echo
+    read -p "Would you like to start a mosh server now? (y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        info "Starting mosh server on ports 60000-60010..."
+        echo
+        echo "Run this command from your LOCAL machine to connect:"
+        echo
+        echo "  mosh $USER@$(hostname) -- tmux new -A -s main"
+        echo
+        echo "Or if you need to specify ports:"
+        echo
+        echo "  mosh --server='mosh-server new -s -c 8 -p 60000:60010' $USER@$(hostname) -- tmux new -A -s main"
+        echo
+        info "Mosh server info:"
+        mosh-server new -s -c 8 -p 60000:60010
+    else
+        info "Skipped. You can start mosh server later with:"
+        echo "  mosh-server new -s -c 8 -p 60000:60010"
+    fi
+fi
 echo
