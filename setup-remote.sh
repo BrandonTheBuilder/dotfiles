@@ -128,22 +128,17 @@ echo
 # ============================================================================
 info "Configuring tmux for OSC 52..."
 
-TMUX_CONF="$DOTFILES_DIR/.tmux.conf"
-
-if [ ! -f "$TMUX_CONF" ]; then
-    error "Tmux config not found at $TMUX_CONF"
-    exit 1
-fi
+# Create a local tmux config extension (not tracked in git)
+TMUX_LOCAL="$HOME/.tmux.local.conf"
 
 # Check if OSC 52 is already configured
-if grep -q "set -s set-clipboard on" "$TMUX_CONF" 2>/dev/null; then
+if [ -f "$TMUX_LOCAL" ] && grep -q "set -s set-clipboard on" "$TMUX_LOCAL" 2>/dev/null; then
     info "Tmux OSC 52 already configured"
 else
-    info "Adding OSC 52 support to tmux config..."
+    info "Adding OSC 52 support to local tmux config..."
 
-    # Add OSC 52 configuration
-    cat >> "$TMUX_CONF" << 'EOF'
-
+    # Create local config file with OSC 52 support
+    cat > "$TMUX_LOCAL" << 'EOF'
 # ============================================================================
 # Remote Clipboard Support (OSC 52)
 # ============================================================================
@@ -155,7 +150,9 @@ set -s set-clipboard on
 unbind -T copy-mode-vi y
 bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "yank-osc52"
 EOF
-    success "Tmux config updated"
+
+    success "Tmux OSC 52 config created at ~/.tmux.local.conf"
+    info "The dotfiles .tmux.conf automatically sources this file"
 fi
 
 echo

@@ -87,10 +87,12 @@ if [ "$OS" = "linux" ]; then
         sudo apt-get install -y nodejs
     fi
 
-    # Install uv via pip
+    # Install uv via installer
     if ! command -v uv &> /dev/null; then
         info "Installing uv..."
         curl -LsSf https://astral.sh/uv/install.sh | sh
+        # Add uv to PATH for current session
+        export PATH="$HOME/.local/bin:$PATH"
     fi
 
     success "Dependencies installed via apt"
@@ -253,6 +255,9 @@ info "Symlinking CoC settings..."
 mkdir -p ~/.vim
 ln -sf "$DOTFILES_DIR/coc-settings.json" ~/.vim/coc-settings.json
 
+# Ensure ~/.local/bin is in PATH (for uv tools)
+export PATH="$HOME/.local/bin:$PATH"
+
 # Install Python tools via uv
 info "Installing Python tools (ty, ruff) via uv..."
 uv tool install ty@latest
@@ -267,6 +272,24 @@ success "Vim plugins installed"
 info "Note: CoC.nvim may take a moment to initialize on first vim startup"
 
 echo
+
+# ============================================================================
+# Set zsh as default shell
+# ============================================================================
+if [ "$SHELL" != "$(which zsh)" ]; then
+    info "Setting zsh as default shell..."
+    if ! grep -q "$(which zsh)" /etc/shells 2>/dev/null; then
+        echo "$(which zsh)" | sudo tee -a /etc/shells > /dev/null
+    fi
+    sudo chsh -s "$(which zsh)" "$USER" 2>/dev/null || {
+        warn "Could not change default shell. You may need to run: chsh -s \$(which zsh)"
+    }
+    success "Default shell set to zsh (takes effect on next login)"
+else
+    info "zsh is already the default shell"
+fi
+
+echo
 info "=================================="
 info "Installation complete!"
 info "=================================="
@@ -274,11 +297,9 @@ echo
 info "Dotfiles symlinked from: $DOTFILES_DIR"
 echo
 info "Next steps:"
-echo "  1. Restart your terminal or run: source ~/.zshrc"
+echo "  1. Start zsh: zsh (or logout and login for new default shell)"
 echo "  2. Authenticate with GitHub CLI: gh auth login"
-echo "  3. Run Powerlevel10k configuration wizard: p10k configure"
-echo "  4. Open vim to verify plugins are working"
-echo "  5. For Python projects, ensure ty is in your PATH: export PATH=\"\$HOME/.local/bin:\$PATH\""
+echo "  3. Open vim to verify plugins are working"
 echo
 info "Installed tools:"
 echo "  - vim: $(vim --version | head -n1)"
