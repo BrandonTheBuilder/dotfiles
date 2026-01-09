@@ -171,6 +171,19 @@ git config --global --unset-all url."git@github.com:".insteadOf 2>/dev/null || t
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
     info "Installing Oh-My-Zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+    # Oh-My-Zsh creates a default .zshrc with robbyrussell theme
+    # Remove it so our dotfiles .zshrc (with p10k) can be used instead
+    if [ -f "$HOME/.zshrc" ]; then
+        info "Removing Oh-My-Zsh default .zshrc (will use dotfiles version with p10k)"
+        rm "$HOME/.zshrc"
+
+        # Restore user's original .zshrc if Oh-My-Zsh backed it up
+        if [ -f "$HOME/.zshrc.pre-oh-my-zsh" ]; then
+            info "Restoring your original .zshrc"
+            mv "$HOME/.zshrc.pre-oh-my-zsh" "$HOME/.zshrc"
+        fi
+    fi
 else
     info "Oh-My-Zsh already installed, skipping..."
 fi
