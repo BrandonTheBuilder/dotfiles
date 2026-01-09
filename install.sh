@@ -276,6 +276,14 @@ else
         warn "Existing ~/.zshrc found. Prepending dotfiles source line..."
         # Backup existing
         cp "$HOME/.zshrc" "$HOME/.zshrc.backup"
+
+        # Remove Oh-My-Zsh default theme (robbyrussell) to prevent conflict with p10k
+        if grep -q 'ZSH_THEME="robbyrussell"' "$HOME/.zshrc.backup" 2>/dev/null; then
+            info "Removing robbyrussell theme from existing .zshrc (conflicts with p10k)"
+            sed '/ZSH_THEME="robbyrussell"/d' "$HOME/.zshrc.backup" > "$HOME/.zshrc.cleaned"
+            mv "$HOME/.zshrc.cleaned" "$HOME/.zshrc.backup"
+        fi
+
         # Prepend the source line
         cat > "$HOME/.zshrc.tmp" << EOF
 # Source base zsh configuration from dotfiles
