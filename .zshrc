@@ -124,6 +124,12 @@ alias pip='pip3'                 # Use pip3 by default
 # To customize prompt, run: `p10k configure` or edit ~/.p10k.zsh
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
+# Show hostname in prompt (user@host)
+POWERLEVEL9K_CONTEXT_TEMPLATE='%n@%m'
+POWERLEVEL9K_CONTEXT_DEFAULT_FOREGROUND='yellow'
+# Always show context (user@host)
+typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,SUDO}_CONTENT_EXPANSION='%n@%m'
+
 # ============================================================================
 # Development Environment Setup
 # ============================================================================
@@ -152,3 +158,9 @@ fi
 # Standard Go configuration
 export GOPATH="$HOME/go"
 export PATH="$GOPATH/bin:$PATH"
+
+# ============================================================================
+# Local Aliases (not tracked in git)
+# ============================================================================
+# Source local aliases if they exist
+[[ -f "$HOME/.zshrc_aliases" ]] && source "$HOME/.zshrc_aliases"
