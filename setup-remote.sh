@@ -41,26 +41,39 @@ echo
 # ============================================================================
 # Test OSC 52 Support
 # ============================================================================
-info "Testing if your terminal supports OSC 52..."
-
-# Try to copy a test string using OSC 52
-printf "\033]52;c;$(printf "OSC52-test" | base64)\a"
-
+info "Testing OSC 52 clipboard support..."
 echo
-echo "If OSC 52 is supported, 'OSC52-test' should now be in your LOCAL clipboard."
-echo "Try pasting (Cmd+V on Mac) to verify."
+echo "This tests remote copy/paste functionality with your terminal."
 echo
-read -p "Did the test work? (y/n): " -n 1 -r
+echo "Supported terminals: iTerm2, WezTerm, Alacritty, VS Code terminal"
+warn "Note: If running tmux locally, OSC 52 won't work unless configured"
+echo
+read -p "Press Enter to test clipboard..."
 echo
 
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    warn "OSC 52 doesn't seem to be working with your terminal."
+# Generate a random test string
+TEST_UUID="osc52-test-$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || echo $RANDOM-$RANDOM-$RANDOM)"
+
+echo "Test string: $TEST_UUID"
+echo
+info "Copying to clipboard via OSC 52..."
+
+# Copy test string to clipboard via OSC 52
+printf "\033]52;c;$(printf "%s" "$TEST_UUID" | base64)\a"
+
+echo
+read -p "Paste from clipboard (Cmd+V / Ctrl+Shift+V): " PASTED_VALUE
+echo
+
+if [[ "$PASTED_VALUE" == "$TEST_UUID" ]]; then
+    success "OSC 52 working!"
+elif [[ -z "$PASTED_VALUE" ]]; then
+    warn "Clipboard test failed - no value pasted"
     echo
-    echo "Common fixes:"
-    echo "  - iTerm2: Preferences → General → Selection → 'Applications in terminal may access clipboard'"
-    echo "  - WezTerm: Should work by default"
-    echo "  - Alacritty: Add 'osc52' to features in config"
-    echo "  - Terminal.app: Not supported, use iTerm2"
+    echo "Troubleshooting:"
+    echo "  • iTerm2: Enable Preferences → General → Selection → 'Applications in terminal may access clipboard'"
+    echo "  • Alacritty: Add 'osc52' to features in config"
+    echo "  • Terminal.app: Not supported - use iTerm2 instead"
     echo
     read -p "Continue anyway? (y/n): " -n 1 -r
     echo
@@ -69,7 +82,16 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
     fi
 else
-    success "OSC 52 is working!"
+    warn "Clipboard test failed - value mismatch"
+    echo "  Expected: $TEST_UUID"
+    echo "  Got:      $PASTED_VALUE"
+    echo
+    read -p "Continue anyway? (y/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        error "Setup cancelled."
+        exit 1
+    fi
 fi
 
 echo
