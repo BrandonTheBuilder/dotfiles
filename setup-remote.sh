@@ -109,10 +109,10 @@ if [ -f "$HOME/.zshrc" ]; then
         cat >> "$HOME/.zshrc" << 'EOF'
 
 # Show hostname in prompt for remote workspaces
-POWERLEVEL9K_CONTEXT_TEMPLATE="%n@$(hostname)"
+POWERLEVEL9K_CONTEXT_TEMPLATE='%n@%m'
 POWERLEVEL9K_CONTEXT_DEFAULT_FOREGROUND='yellow'
-# Always show context in remote workspaces
-typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,SUDO}_{CONTENT,VISUAL_IDENTIFIER}_EXPANSION=
+# Always show context (user@host) in remote workspaces
+typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,SUDO}_CONTENT_EXPANSION='%n@%m'
 EOF
         success "Prompt configured to show hostname"
     fi
@@ -121,38 +121,39 @@ fi
 echo
 
 # ============================================================================
-# Optional: Install mosh
+# Optional: Install Eternal Terminal
 # ============================================================================
-info "Mosh provides better remote connections but doesn't support OSC 52 clipboard."
-info "SSH + tmux is recommended for clipboard support."
+info "Eternal Terminal provides persistent remote connections with full OSC 52 clipboard support."
+info "It auto-reconnects on network changes and survives SSH disconnects."
 echo
-read -p "Install mosh? (y/n): " -n 1 -r
+read -p "Install Eternal Terminal? (y/n): " -n 1 -r
 echo
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     if command -v apt-get &> /dev/null; then
-        info "Installing mosh..."
-        sudo apt-get install -y mosh
-        success "mosh installed"
+        info "Adding Eternal Terminal PPA..."
+        sudo apt-get update -qq
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository -y ppa:jgmath2000/et
+        sudo apt-get update -qq
 
-        info "To connect with mosh from your local machine:"
-        echo "  mosh user@host -- tmux new -A -s main"
-        echo
-        info "Mosh uses UDP ports 60000-61000 by default"
+        info "Installing Eternal Terminal..."
+        sudo apt-get install -y et
+        success "Eternal Terminal installed"
 
     elif command -v brew &> /dev/null; then
-        if ! command -v mosh &> /dev/null; then
-            info "Installing mosh..."
-            brew install mosh
-            success "mosh installed"
+        if ! command -v et &> /dev/null; then
+            info "Installing Eternal Terminal..."
+            brew install eternalterminal
+            success "Eternal Terminal installed"
         else
-            info "mosh already installed"
+            info "Eternal Terminal already installed"
         fi
     else
-        warn "No package manager found, cannot install mosh"
+        warn "No package manager found, cannot install Eternal Terminal"
     fi
 else
-    info "Skipped mosh installation. Use SSH for remote connections."
+    info "Skipped Eternal Terminal installation. Use SSH for remote connections."
 fi
 
 echo
@@ -308,47 +309,23 @@ success "=========================================="
 success "Remote Workspace Setup Complete!"
 success "=========================================="
 echo
-info "Connecting to remote workspace (recommended):"
-echo "  ssh user@host"
-echo "  tmux new -A -s main"
+info "Connecting to remote workspace:"
+echo "  • With Eternal Terminal: et user@host"
+echo "  • With SSH: ssh user@host"
+echo "  • Then start tmux: tmux new -A -s main"
 echo
-info "How to use remote clipboard (OSC 52 via SSH):"
+info "How to use remote clipboard (OSC 52):"
 echo "  • Tmux: Press Ctrl-g [ for copy mode, select with 'v', yank with 'y'"
 echo "  • Vim: Enter visual mode (v/V/Ctrl-v), select text, press 'y'"
 echo "  • Text is copied to your LOCAL clipboard"
 echo "  • Paste on your Mac with Cmd+V"
 echo
 info "Session persistence:"
-echo "  • Tmux sessions survive SSH disconnects"
-echo "  • If disconnected, SSH back in and run: tmux attach"
+echo "  • Eternal Terminal automatically reconnects on network changes"
+echo "  • Tmux sessions survive all disconnects"
+echo "  • If disconnected, reconnect and run: tmux attach"
 echo
 info "Note: Restart tmux for OSC 52 changes to take effect:"
 echo "  tmux kill-server && tmux"
 echo
 
-# ============================================================================
-# Optional: Start Mosh Server
-# ============================================================================
-if command -v mosh-server &> /dev/null; then
-    echo
-    read -p "Would you like to start a mosh server now? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        info "Starting mosh server on ports 60000-60010..."
-        echo
-        echo "Run this command from your LOCAL machine to connect:"
-        echo
-        echo "  mosh $USER@$(hostname) -- tmux new -A -s main"
-        echo
-        echo "Or if you need to specify ports:"
-        echo
-        echo "  mosh --server='mosh-server new -s -c 8 -p 60000:60010' $USER@$(hostname) -- tmux new -A -s main"
-        echo
-        info "Mosh server info:"
-        mosh-server new -s -c 8 -p 60000:60010
-    else
-        info "Skipped. You can start mosh server later with:"
-        echo "  mosh-server new -s -c 8 -p 60000:60010"
-    fi
-fi
-echo
