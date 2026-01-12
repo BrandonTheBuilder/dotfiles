@@ -1,5 +1,7 @@
 {
   "coc.preferences.semanticTokensHighlights": false,
+  "diagnostic.virtualText": true,
+  "diagnostic.virtualTextCurrentLineOnly": false,
   "languageserver": {
     "bash": {
       "command": "bash-language-server",

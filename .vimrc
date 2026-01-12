@@ -276,8 +276,29 @@ nmap <leader>rn <Plug>(coc-rename)
 xmap <leader>cf  <Plug>(coc-format-selected)
 nmap <leader>cf  <Plug>(coc-format-selected)
 
+" Symbol search
+nnoremap <silent> <leader>s :CocList symbols<CR>
+nnoremap <silent> <leader>o :CocList outline<CR>
+
+" Code actions (quick fixes, refactorings, etc.)
+nmap <leader>a <Plug>(coc-codeaction-cursor)
+xmap <leader>a <Plug>(coc-codeaction-selected)
+
+" Navigate diagnostics
+nmap <silent> [g <Plug>(coc-diagnostic-prev)
+nmap <silent> ]g <Plug>(coc-diagnostic-next)
+
+" Show all CoC commands
+nnoremap <silent> <leader>c :CocList commands<CR>
+
 " Show diagnostic error messages
 nnoremap <silent> <leader>d :CocDiagnostics<CR>
+
+" Customize virtual text colors for diagnostics
+highlight CocErrorVirtualText ctermfg=Black ctermbg=Red guifg=#ff5555
+highlight CocWarningVirtualText ctermfg=Black ctermbg=Yellow guifg=#ffff00
+highlight CocInfoVirtualText ctermfg=Black ctermbg=Blue guifg=#5555ff
+highlight CocHintVirtualText ctermfg=Black ctermbg=Cyan guifg=#55ffff
 
 " In visual mode, y yanks to system clipboard via OSC 52
 vnoremap y y:OSCYankRegister "<CR>
